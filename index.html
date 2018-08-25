@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Get place by MAC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript">
+    </script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+</head>
+<style>
+    #app {
+        text-align: center;
+    }
+    textarea {
+        width: 300px;
+        height: 150px;
+    }
+    #map {
+        margin: auto;
+    }
+</style>
+<body>
+    <div id="app">
+        <label>Enter MAC or MACs:</label><br>
+        <textarea v-model="mac" width=100></textarea><br>
+        <div>{{ n.total - n.errors }} / {{ n.total }}</div>
+        <input type="button" value="Find" @click="getAllIPs"/>
+        <div id="map" style="width: 800px; height: 600px"></div>
+    </div>
+</body>
+<script>
+    String.prototype.replaceAll = function(search, replacement) {
+        var target = this;
+        return target.split(search).join(replacement);
+    };
+    const N = 10;
+    new Vue({
+        el: "#app",
+        data: {
+            mac: '',
+            map: null,
+            n: {errors:0, total: 0}
+        },
+        mounted() {
+            ymaps.ready(() => {
+                this.map = new ymaps.Map("map", {
+                    center: [55.018803, 82.933952],
+                    zoom: 9
+                });
+            });
+        },
+        methods: {
+            getAllIPs: function () {
+                let macs = this.mac.split(',');
+                this.n.total = macs.length;
+                if (macs.length === 0) {
+                    this.error = 'No macs';
+                    return;
+                }
+                for (let i = 0; i < macs.length; i++) {
+                    this.getIP(macs[i]);
+                }
+            },
+            getIP: function (mac) {
+                let url = 'https://cors.io/?https://mobile.maps.yandex.net/cellid_location/?clid=1866854&lac=-1&cellid=-1&operatorid=null&countrycode=null&signalstrength=-1&wifinetworks='+ mac.replaceAll(':','') +':-65&app=ymetro';
+                
+                axios.get(url).then((resp) => {
+                    console.log(resp);
+                    let parser = new DOMParser();
+                    let xmlDoc = parser.parseFromString(resp.data,"text/xml");
+                    let lat = xmlDoc.getElementsByTagName("coordinates")[0].getAttribute("latitude");
+                    let long = xmlDoc.getElementsByTagName("coordinates")[0].getAttribute("longitude");
+                    var myPlacemark = new ymaps.Placemark([lat, long], {
+                        hintContent: mac,
+                        balloonContent: mac
+                    });
+                    this.map.geoObjects.add(myPlacemark);
+                }).catch(() => {
+                    this.n.errors++;
+                })
+            }
+        }
+    })
+</script>
+
+</html>
