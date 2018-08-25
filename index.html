@@ -56,11 +56,14 @@
         methods: {
             getAllIPs: function () {
                 let macs = this.mac.split(',');
-                this.n.total = macs.length;
-                if (macs.length === 0) {
-                    this.error = 'No macs';
-                    return;
+                if (macs[0].length > 17) {
+                    macs = this.mac.split("\n");
+                    if (macs.length === 0) {
+                        this.error = 'No macs';
+                        return;
+                    }
                 }
+                this.n.total += macs.length;
                 for (let i = 0; i < macs.length; i++) {
                     this.getIP(macs[i]);
                 }
