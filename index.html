@@ -6,10 +6,8 @@
     <title>Get place by MAC</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
-    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript">
-    </script>
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-
 </head>
 <style>
     #app {
@@ -21,15 +19,32 @@
     }
     #map {
         margin: auto;
+        width: 800px;
+        height: 600px;
+    }
+    .error {
+        display: inline-block;
+        width: auto;
+        padding: 5px;
+        background-color: #f44336; /* Red */
+        color: white;
+        margin: auto;
+    }
+
+    @media screen and (max-width: 600px) {
+        #map {
+            width: 100%;
+        }
     }
 </style>
 <body>
     <div id="app">
         <label>Enter MAC or MACs:</label><br>
         <textarea v-model="mac" width=100></textarea><br>
+        <div v-if="error" class="error">{{ error }}</div>
         <div>{{ n.total - n.errors }} / {{ n.total }}</div>
-        <input type="button" value="Find" @click="getAllIPs"/>
-        <div id="map" style="width: 800px; height: 600px"></div>
+        <input type="button" value="Search" @click="getAllIPs"/>
+        <div id="map"></div>
     </div>
 </body>
 <script>
@@ -43,7 +58,8 @@
         data: {
             mac: '',
             map: null,
-            n: {errors:0, total: 0}
+            n: {errors:0, total: 0},
+            error: ""
         },
         mounted() {
             ymaps.ready(() => {
@@ -58,11 +74,16 @@
                 let macs = this.mac.split(',');
                 if (macs[0].length > 17) {
                     macs = this.mac.split("\n");
+                    console.log(macs)
                     if (macs.length === 0) {
-                        this.error = 'No macs';
+                        this.error = 'No MACs found in the input';
                         return;
                     }
+                } else {
+                    this.error = 'No MACs found in the input';
+                    return;
                 }
+                this.error = "";
                 this.n.total += macs.length;
                 for (let i = 0; i < macs.length; i++) {
                     this.getIP(macs[i]);
